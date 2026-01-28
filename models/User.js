@@ -21,23 +21,17 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // this runs automatically before saving a user to the database
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function() {
   // if the password wasn't changed, skip this whole thing
   if (!this.isModified('password')) {
-    return next();
+    return;
   }
   
-  try {
-    // make a salt - basically random data to make the hash more secure
-    const salt = await bcrypt.genSalt(10);
-    
-    // turn the plain text password into a hashed version
-    this.password = await bcrypt.hash(this.password, salt);
-    
-    next();
-  } catch (error) {
-    next(error);
-  }
+  // make a salt - basically random data to make the hash more secure
+  const salt = await bcrypt.genSalt(10);
+  
+  // turn the plain text password into a hashed version
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 // helper method to check if login password matches the hashed one
