@@ -1,0 +1,190 @@
+### Variables
+@baseUrl = http://localhost:5000/api
+@userAEmail = userA@test.com
+@userAPassword = password123
+@userBEmail = userB@test.com
+@userBPassword = password456
+
+### ===== HEALTH CHECK =====
+
+### 1. Health Check
+GET {{baseUrl}}/health
+
+### ===== USER REGISTRATION & LOGIN =====
+
+### 2. Register User A
+POST {{baseUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "userA",
+  "email": "{{userAEmail}}",
+  "password": "{{userAPassword}}"
+}
+
+### 3. Register User B
+POST {{baseUrl}}/users/register
+Content-Type: application/json
+
+{
+  "username": "userB",
+  "email": "{{userBEmail}}",
+  "password": "{{userBPassword}}"
+}
+
+### 4. Login User A
+POST {{baseUrl}}/users/login
+Content-Type: application/json
+
+{
+  "email": "{{userAEmail}}",
+  "password": "{{userAPassword}}"
+}
+
+### 5. Login User B
+POST {{baseUrl}}/users/login
+Content-Type: application/json
+
+{
+  "email": "{{userBEmail}}",
+  "password": "{{userBPassword}}"
+}
+
+### ===== SECURITY TEST: Access Protected Route Without Token =====
+
+### 6. Try to Get Projects Without Token (Should return 401 Unauthorized)
+GET {{baseUrl}}/projects
+
+### ===== PROJECT OPERATIONS WITH USER A =====
+
+### 7. User A Creates Project
+POST {{baseUrl}}/projects
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDEiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_a
+
+{
+  "name": "User A's Project",
+  "description": "This is a project owned by User A"
+}
+
+### 8. User A Gets Their Projects
+GET {{baseUrl}}/projects
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDEiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_a
+
+### ===== PROJECT OPERATIONS WITH USER B =====
+
+### 9. User B Creates Project
+POST {{baseUrl}}/projects
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDIiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_b
+
+{
+  "name": "User B's Project",
+  "description": "This is a project owned by User B"
+}
+
+### 10. User B Gets Their Projects
+GET {{baseUrl}}/projects
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDIiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_b
+
+### ===== SECURITY TEST: Cross-User Access (Should fail with 403) =====
+
+### 11. User B Tries to Access User A's Project (Should return 403 Forbidden)
+### Use the Project ID from test 7 response
+GET {{baseUrl}}/projects/USER_A_PROJECT_ID_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDIiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_b
+
+### 12. User A Tries to Access User B's Project (Should return 403 Forbidden)
+### Use the Project ID from test 9 response
+GET {{baseUrl}}/projects/USER_B_PROJECT_ID_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDEiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_a
+
+### ===== TASK OPERATIONS WITH USER A =====
+
+### 13. User A Adds Task to Their Project
+POST {{baseUrl}}/projects/USER_A_PROJECT_ID_HERE/tasks
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDEiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_a
+
+{
+  "title": "Task 1",
+  "description": "First task for User A",
+  "status": "To Do"
+}
+
+### 14. User A Gets Tasks from Their Project
+GET {{baseUrl}}/projects/USER_A_PROJECT_ID_HERE/tasks
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDEiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_a
+
+### ===== SECURITY TEST: Task Cross-User Access (Should fail with 403) =====
+
+### 15. User B Tries to Add Task to User A's Project (Should return 403 Forbidden)
+POST {{baseUrl}}/projects/USER_A_PROJECT_ID_HERE/tasks
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDIiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_b
+
+{
+  "title": "Unauthorized Task",
+  "description": "User B trying to add task to User A's project",
+  "status": "To Do"
+}
+
+### 16. User B Tries to Get Tasks from User A's Project (Should return 403 Forbidden)
+GET {{baseUrl}}/projects/USER_A_PROJECT_ID_HERE/tasks
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDIiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_b
+
+### ===== UPDATE OPERATIONS =====
+
+### 17. User A Updates Their Project
+PUT {{baseUrl}}/projects/USER_A_PROJECT_ID_HERE
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDEiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_a
+
+{
+  "name": "Updated User A Project",
+  "description": "Updated description for User A's project"
+}
+
+### 18. User B Tries to Update User A's Project (Should return 403 Forbidden)
+PUT {{baseUrl}}/projects/USER_A_PROJECT_ID_HERE
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDIiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_b
+
+{
+  "name": "Malicious Update",
+  "description": "User B trying to update User A's project"
+}
+
+### 19. User A Updates Their Task
+PUT {{baseUrl}}/tasks/TASK_ID_HERE
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDEiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_a
+
+{
+  "title": "Updated Task 1",
+  "status": "In Progress"
+}
+
+### 20. User B Tries to Update User A's Task (Should return 403 Forbidden)
+PUT {{baseUrl}}/tasks/TASK_ID_HERE
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDIiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_b
+
+{
+  "title": "Unauthorized Update",
+  "status": "Done"
+}
+
+### ===== DELETE OPERATIONS =====
+
+### 21. User A Deletes Their Task
+DELETE {{baseUrl}}/tasks/TASK_ID_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDEiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_a
+
+### 22. User B Tries to Delete User A's Project (Should return 403 Forbidden)
+DELETE {{baseUrl}}/projects/USER_A_PROJECT_ID_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDIiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_b
+
+### 23. User A Deletes Their Own Project
+DELETE {{baseUrl}}/projects/USER_A_PROJECT_ID_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2Nzk4N2E4ZWE4ZjQ3ZjAwMDAwMDAwMDEiLCJpYXQiOjE3Mzc5OTk2NDIsImV4cCI6MTczODA4NjA0Mn0.test_token_a
